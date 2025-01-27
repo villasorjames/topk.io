@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bible Book Selection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+        }
+        select, input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .translated {
+            margin-top: 20px;
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 18px;
+            font-style: Serif;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Bible Book Selection</h1>
+
+        <!-- Combined Select with Grouped Old and New Testament -->
+        <select id="book" onchange="fetchVerse()">
+            <optgroup label="Old Testament">
+                <option value="genesis">Genesis</option>
+                <option value="exodus">Exodus</option>
+                <option value="leviticus">Leviticus</option>
+                <option value="numbers">Numbers</option>
+                <option value="deuteronomy">Deuteronomy</option>
+                <!-- Add more Old Testament books here -->
+            </optgroup>
+            <optgroup label="New Testament">
+                <option value="matthew">Matthew</option>
+                <option value="mark">Mark</option>
+                <option value="luke">Luke</option>
+                <option value="john">John</option>
+                <option value="acts">Acts</option>
+                <!-- Add more New Testament books here -->
+            </optgroup>
+        </select>
+
+        <!-- Chapter and Verse Input -->
+        <input type="number" id="chapter" min="1" placeholder="Chapter Number" oninput="fetchVerse()">
+        <input type="number" id="verse" min="1" placeholder="Verse Number" oninput="fetchVerse()">
+
+        <!-- Output for English and Cebuano Verses -->
+        <div id="translatedContent" class="translated"></div>
+    </div>
+
+    <script>
+        function fetchVerse() {
+            const book = document.getElementById("book").value;
+            const chapter = document.getElementById("chapter").value;
+            const verse = document.getElementById("verse").value;
+
+            // Check if chapter and verse are provided
+            if (!chapter || !verse) {
+                document.getElementById("translatedContent").innerHTML = "Please enter chapter and verse numbers.";
+                return;
+            }
+
+            const url = `https://cdn.jsdelivr.net/gh/wldeh/bible-api/bibles/en-kjv/books/${book}/chapters/${chapter}/verses/${verse}.json`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const verseText = data.text || "No Verses Found.";
+                    const cleanText = verseText.replace(/\s*\d+\.\d+.*?[:;].*$/, "").trim();
+
+                    // Translate the verse to Cebuano and display it alongside English
+                    translateToCebuano(book, chapter, verse, cleanText);
+                })
+                .catch(error => {
+                    document.getElementById("translatedContent").innerHTML = `<p>Verse not found.</p>`;
+                });
+        }
+
+        function translateToCebuano(book, chapter, verse, text) {
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ceb&dt=t&q=${encodeURIComponent(text)}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const translatedText = data[0].map(item => item[0]).join('');
+
+                    // Display the verse text in both English and Cebuano
+                    document.getElementById("translatedContent").innerHTML = `
+                        <strong>Book: ${book.charAt(0).toUpperCase() + book.slice(1)}</strong> - Chapter: ${chapter} Verse: ${verse}
+                        <p><strong>English:</strong> ${text}</p>
+                        <p><strong>Cebuano:</strong> ${translatedText}</p>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById("translatedContent").innerHTML = `<p>Translation error.</p>`;
+                });
+        }
+    </script>
+
+</body>
+</html>
